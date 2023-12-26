@@ -495,7 +495,7 @@ body {
 }
 
 #building-1 {
-    background-image: url('New_Year_Fire_Work/pic/citybg.png');
+    background-image: url('../pic/citybg.png');
     background-repeat: repeat-x;
     background-size: contain;
     /* background-position: center bottom, center bottom; */
