@@ -488,17 +488,17 @@ body {
 }
 
 #city-wrap {
-    width: fit-content;
+    width: 100%;
     height: 100%;
     overflow: hidden;
     position: absolute;
 }
 
 #building-1 {
-    background-image: url(/pic/citybg.png);
+    background-image: url('New_Year_Fire_Work/pic/citybg.png');
     background-repeat: repeat-x;
     background-size: contain;
-    background-position: center bottom, center bottom;
+    /* background-position: center bottom, center bottom; */
     height: 70vmin;
     width: 100%;
     /* top: 30vmin; */
