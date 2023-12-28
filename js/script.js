@@ -40,8 +40,8 @@ let stageW, stageH;
 // All quality globals will be overwritten and updated via `configDidUpdate`.
 let quality = 1;
 let isLowQuality = false;
-let isNormalQuality = true;
-let isHighQuality = false;
+let isNormalQuality = false;
+let isHighQuality = true;
 
 const QUALITY_LOW = 1;
 const QUALITY_NORMAL = 2;
