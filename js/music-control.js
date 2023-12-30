@@ -1,6 +1,7 @@
 const musicOn = '<svg fill="white" width="24" height="24"><use href="#icon-music-on" xlink:href="#icon-music-on"></use></svg>';
 const musicOff = '<svg fill="white" width="24" height="24"><use href="#icon-music-off" xlink:href="#icon-music-off"></use></svg>';
 const music_btn = document.getElementById('music_btn');
+const sound_btn = document.getElementById('sound_btn');
 
 
 const muteSound = new Howl({
@@ -13,14 +14,12 @@ const muteSound = new Howl({
 });
 muteSound.autoUnlock = false;
 
-// play music once first time
-music_btn.addEventListener('click', playHNY, { once: true });
-
 function playHNY() {
     muteSound.play();
     music_btn.innerHTML = musicOn;
 }
-
+// play music once first time
+sound_btn.addEventListener('click', playHNY, { once: true });
 // mute/unmute
 music_btn.addEventListener("click", () => {
     // if the audio is muted, set the btn.innerHTML to unmuteIcon
