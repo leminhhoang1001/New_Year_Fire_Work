@@ -1070,6 +1070,8 @@ const sequences = [
 ];
 
 
+// Biến đếm số lần bắn để kích hoạt sự kiện đặc biệt
+let launchCount = 0;
 let isFirstSeq = true;
 const finaleCount = 32;
 let currentFinaleCount = 0;
@@ -1077,14 +1079,21 @@ let currentFinaleCount = 0;
 function startSequence() {
     if (isFirstSeq) {
         isFirstSeq = false;
-        if (IS_HEADER) {
-            return seqTwoRandom();
-        } else {
+        if (IS_HEADER) return seqTwoRandom();
+        else {
             const shell = new Shell(crysanthemumShell(shellSizeSelector()));
             shell.launch(0.5, 0.5);
             return 2400;
         }
     }
+
+    // --- LOGIC KÍCH HOẠT CHỮ ---
+    launchCount++;
+    if (launchCount % 10 === 0) { // Cứ 20 quả thường thì bắn 1 quả chữ
+        launchTextShell();
+        return 5000; // Chờ 7 giây cho chữ tan hết mới bắn tiếp
+    }
+    // ---------------------------
 
     if (finaleSelector()) {
         seqRandomFastShell();
@@ -1098,22 +1107,11 @@ function startSequence() {
     }
 
     const rand = Math.random();
-
-    if (rand < 0.08 && Date.now() - seqSmallBarrage.lastCalled > seqSmallBarrage.cooldown) {
-        return seqSmallBarrage();
-    }
-
-    if (rand < 0.1) {
-        return seqPyramid();
-    }
-
-    if (rand < 0.6 && !IS_HEADER) {
-        return seqRandomShell();
-    } else if (rand < 0.8) {
-        return seqTwoRandom();
-    } else if (rand < 1) {
-        return seqTriple();
-    }
+    if (rand < 0.08 && Date.now() - seqSmallBarrage.lastCalled > seqSmallBarrage.cooldown) return seqSmallBarrage();
+    if (rand < 0.1) return seqPyramid();
+    if (rand < 0.6 && !IS_HEADER) return seqRandomShell();
+    else if (rand < 0.8) return seqTwoRandom();
+    else if (rand < 1) return seqTriple();
 }
 
 
@@ -1294,7 +1292,10 @@ function update(frameTime, lag) {
                     star.speedX *= starDragHeavy;
                     star.speedY *= starDragHeavy;
                 }
-                star.speedY += gAcc;
+                //Nếu có cờ ignoreGravity thì không cộng trọng lực
+                if (!star.ignoreGravity) {
+                    star.speedY += gAcc;
+                }
 
                 if (star.spinRadius) {
                     star.spinAngle += star.spinSpeed * speed;
@@ -2014,6 +2015,7 @@ const Star = {
 
         instance.visible = true;
         instance.heavy = false;
+        instance.ignoreGravity = false;
         instance.x = x;
         instance.y = y;
         instance.prevX = x;
@@ -2288,3 +2290,139 @@ if (IS_HEADER) {
             );
     }, 0);
 }
+
+
+// =======================================================
+// PHẦN BỔ SUNG: HIỆU ỨNG CHỮ HAPPY NEW YEAR
+// =======================================================
+
+// =======================================================
+// CẬP NHẬT: PHÁO HOA CHỮ - PHIÊN BẢN SHELL + ÂM THANH
+// =======================================================
+
+// 1. Giữ nguyên hàm lấy tọa độ (chỉnh step = 8 hoặc 9 cho đẹp)
+function getTextPoints(text, fontSize, fontName = 'Arial') {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Tăng chiều cao canvas lên xíu để chữ không bị cắt
+    canvas.width = fontSize * text.length; 
+    canvas.height = fontSize * 1.5;
+
+    ctx.font = `bold ${fontSize}px ${fontName}`;
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const points = [];
+    
+    // Step càng lớn hạt càng thưa. 
+    const step = IS_MOBILE ? 9 : 8; 
+
+    for (let y = 0; y < canvas.height; y += step) {
+        for (let x = 0; x < canvas.width; x += step) {
+            const index = (y * canvas.width + x) * 4;
+            if (data[index + 3] > 128) {
+                points.push({
+                    x: x - canvas.width / 2,
+                    y: y - canvas.height / 2
+                });
+            }
+        }
+    }
+    return points;
+}
+
+// 2. Hàm tạo hạt pháo hoa (được gọi sau khi quả pháo bay lên và nổ)
+function spawnTextParticles(x, y, text, fontSize, colorHex, fontName) {
+    const font = fontName || 'Impact, Arial';
+
+    const points = getTextPoints(text, fontSize, font);
+    const color = colorHex || COLOR.Gold;
+
+    points.forEach(p => {
+        const lifeTime = 3000 + Math.random() * 2000; // Sống từ 3-5 giây
+
+        const star = Star.add(
+            x + p.x,   
+            y + p.y,   
+            color,      
+            Math.PI / 2, 
+            0,          
+            lifeTime, 
+            0, 0        
+        );
+
+        // --- CẤU HÌNH SPARKLE (Pháo bông que) ---
+        star.ignoreGravity = true; 
+        star.speedX = 0;
+        star.speedY = 0;
+        star.spinRadius = 0; // Giữ chữ đứng im, không xoay
+        
+        // Hiệu ứng "Crack crack" (Lửa xẹt)
+        star.sparkFreq = 80;    // Bắn tia lửa liên tục
+        star.sparkSpeed = 2.8;  // Tia lửa bắn ra độ xa vừa phải
+        star.sparkLife = 600;   
+        star.sparkLifeVariation = 3.0;
+        star.sparkColor = COLOR.Gold; 
+    });
+}
+
+// 3. Hàm BẮN pháo (Launch Shell) rồi mới hiện chữ
+function launchTextShell() {
+    // A. Cấu hình quả pháo bay lên
+    // Chúng ta tạo một Shell "giả" để lợi dụng vật lý bay lên của nó
+    const shell = new Shell({
+        spreadSize: 0, // Không dùng hiệu ứng nổ mặc định
+        starCount: 0,
+        starLife: 0,
+        color: COLOR.White
+    });
+
+    // B. Bắn pháo từ giữa màn hình dưới đáy (0.5) lên vị trí cao (0.85 chiều cao)
+    // Lưu ý: launch(positionX, targetHeight)
+    shell.launch(0.5, 0.5); 
+
+    // C. Can thiệp vào sự kiện "onDeath" (Lúc pháo nổ)
+    shell.comet.onDeath = (comet) => {
+        // --- 1. ÂM THANH ---
+        // Tiếng nổ lớn (Burst) thay vì burstSmall
+        soundManager.playSound('burst'); 
+        
+        // Tiếng lách tách (Crack crack) khi chữ hiện ra
+        // Gọi 2 lần delay nhẹ để tạo cảm giác ròn rã
+        soundManager.playSound('crackle'); 
+        setTimeout(() => soundManager.playSound('crackle'), 300);
+        setTimeout(() => soundManager.playSound('crackle'), 300);
+        setTimeout(() => soundManager.playSound('burstSmall'), 200);
+        setTimeout(() => soundManager.playSound('crackle'), 200);
+        setTimeout(() => soundManager.playSound('burstSmall'), 200);
+        setTimeout(() => soundManager.playSound('crackle'), 300);
+        setTimeout(() => soundManager.playSound('crackle'), 300);
+        setTimeout(() => soundManager.playSound('burstSmall'), 200);
+        setTimeout(() => soundManager.playSound('crackle'), 300);
+
+
+        // --- 2. VỊ TRÍ NỔ ---
+        // Lấy tọa độ nơi quả pháo phát nổ
+        const X = comet.x;
+        const Y = comet.y;
+
+        // --- 3. HIỆN CHỮ ---
+        // Dòng 1: "Happy New Year" (Font vừa)
+        // Dịch lên trên một chút (Y - 60)
+        spawnTextParticles(X, Y, "Happy New Year", IS_MOBILE ? 50 : 150, COLOR.Gold, 'Pacifico');
+
+        // Dòng 2: "2026" (Font TO)
+        // Dịch xuống dưới một chút (Y + 60) -> Khoảng cách gần
+        const nextYear = new Date().getFullYear();
+        spawnTextParticles(X, Y + 200, nextYear.toString(), IS_MOBILE ? 80 : 200, COLOR.White, 'Bangers');
+        
+        // (Tùy chọn) Thêm một chớp sáng (Flash) để cú nổ trông mạnh hơn
+        BurstFlash.add(X, Y, 200);
+    };
+}
+
