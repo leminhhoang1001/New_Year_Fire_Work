@@ -2300,35 +2300,56 @@ if (IS_HEADER) {
 // CẬP NHẬT: PHÁO HOA CHỮ - PHIÊN BẢN SHELL + ÂM THANH
 // =======================================================
 
-// 1. Giữ nguyên hàm lấy tọa độ (chỉnh step = 8 hoặc 9 cho đẹp)
+// 1. Hàm lấy tọa độ điểm ảnh (Phiên bản HD Super-sampling)
 function getTextPoints(text, fontSize, fontName = 'Arial') {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Tăng chiều cao canvas lên xíu để chữ không bị cắt
-    canvas.width = fontSize * text.length; 
-    canvas.height = fontSize * 1.5;
+    // [KỸ THUẬT MỚI] Hệ số độ phân giải (Resolution Scale)
+    // Vẽ to gấp 2 lần bình thường để lấy nét các đường cong
+    const resolution = 2; 
+    
+    // Tính toán kích thước canvas (Nhân với resolution)
+    const w = fontSize * text.length;
+    const h = fontSize * 1.5;
+    canvas.width = w * resolution; 
+    canvas.height = h * resolution;
 
+    // Scale context lên để vẽ chữ to đẹp
+    ctx.scale(resolution, resolution);
+
+    // Vẽ chữ
     ctx.font = `bold ${fontSize}px ${fontName}`;
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    // Lưu ý: Tọa độ vẽ vẫn giữ nguyên vì ta đã dùng ctx.scale
+    ctx.fillText(text, w / 2, h / 2);
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     const points = [];
     
-    // Step càng lớn hạt càng thưa. 
-    const step = IS_MOBILE ? 9 : 8; 
+    // [QUAN TRỌNG] Điều chỉnh độ thưa (step)
+    // Mobile màn hình nhỏ cần nét dày hơn -> step nhỏ (3 hoặc 4)
+    // PC màn hình to cần thưa cho thoáng -> step lớn (8 hoặc 9)
+    // Vì ta đang vẽ ở độ phân giải x2 (resolution = 2), ta cũng cần nhân step lên tương ứng
+    const baseStep = IS_MOBILE ? 3 : 8; 
+    const step = baseStep * resolution; 
 
     for (let y = 0; y < canvas.height; y += step) {
-        for (let x = 0; x < canvas.width; x += step) {
-            const index = (y * canvas.width + x) * 4;
+        // Thêm một chút random cho x start để các hàng không bị thẳng tắp (tự nhiên hơn)
+        const xStart = (y % (step*2) === 0) ? 0 : (step/2);
+        
+        for (let x = xStart; x < canvas.width; x += step) {
+            const index = (y * canvas.width + Math.floor(x)) * 4;
+            
+            // Kiểm tra độ trong suốt (Alpha channel)
             if (data[index + 3] > 128) {
                 points.push({
-                    x: x - canvas.width / 2,
-                    y: y - canvas.height / 2
+                    // Chia lại cho resolution để trả về kích thước thật trên màn hình
+                    x: (x - canvas.width / 2) / resolution, 
+                    y: (y - canvas.height / 2) / resolution
                 });
             }
         }
