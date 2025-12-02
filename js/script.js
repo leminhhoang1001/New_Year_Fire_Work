@@ -2385,7 +2385,7 @@ function spawnTextParticles(x, y, text, fontSize, colorHex, fontName) {
         
         // Hiệu ứng "Crack crack" (Lửa xẹt)
         star.sparkFreq = 80;    // Bắn tia lửa liên tục
-        star.sparkSpeed = 2.8;  // Tia lửa bắn ra độ xa vừa phải
+        star.sparkSpeed = IS_MOBILE ? 0.5 : 2.8;  // Tia lửa bắn ra độ xa vừa phải
         star.sparkLife = 600;   
         star.sparkLifeVariation = 3.0;
         star.sparkColor = COLOR.Gold; 
@@ -2435,12 +2435,12 @@ function launchTextShell() {
         // --- 3. HIỆN CHỮ ---
         // Dòng 1: "Happy New Year" (Font vừa)
         // Dịch lên trên một chút (Y - 60)
-        spawnTextParticles(X, Y, "Happy New Year", IS_MOBILE ? 50 : 150, COLOR.Gold, 'Pacifico');
+        spawnTextParticles(X, Y, "Happy New Year", IS_MOBILE ? 80 : 150, COLOR.Gold, 'Pacifico');
 
         // Dòng 2: "2026" (Font TO)
         // Dịch xuống dưới một chút (Y + 60) -> Khoảng cách gần
         const nextYear = new Date().getFullYear();
-        spawnTextParticles(X, Y + 200, nextYear.toString(), IS_MOBILE ? 80 : 200, COLOR.White, 'Bangers');
+        spawnTextParticles(X, Y + 200, nextYear.toString(), IS_MOBILE ? 100 : 200, COLOR.White, 'Bangers');
         
         // (Tùy chọn) Thêm một chớp sáng (Flash) để cú nổ trông mạnh hơn
         BurstFlash.add(X, Y, 200);
