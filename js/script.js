@@ -2435,7 +2435,7 @@ function launchTextShell() {
         // --- 3. HIỆN CHỮ ---
         // Dòng 1: "Happy New Year" (Font vừa)
         // Dịch lên trên một chút (Y - 60)
-        spawnTextParticles(X, Y, "Happy New Year", IS_MOBILE ? 80 : 150, COLOR.Gold, 'Pacifico');
+        spawnTextParticles(X, Y, "Happy New Year", IS_MOBILE ? 60 : 150, COLOR.Gold, 'Pacifico');
 
         // Dòng 2: "2026" (Font TO)
         // Dịch xuống dưới một chút (Y + 60) -> Khoảng cách gần
