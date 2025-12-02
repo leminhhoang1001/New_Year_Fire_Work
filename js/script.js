@@ -2334,7 +2334,7 @@ function getTextPoints(text, fontSize, fontName = 'Arial') {
     // Mobile màn hình nhỏ cần nét dày hơn -> step nhỏ (3 hoặc 4)
     // PC màn hình to cần thưa cho thoáng -> step lớn (8 hoặc 9)
     // Vì ta đang vẽ ở độ phân giải x2 (resolution = 2), ta cũng cần nhân step lên tương ứng
-    const baseStep = IS_MOBILE ? 3 : 8; 
+    const baseStep = IS_MOBILE ? 2 : 8; 
     const step = baseStep * resolution; 
 
     for (let y = 0; y < canvas.height; y += step) {
