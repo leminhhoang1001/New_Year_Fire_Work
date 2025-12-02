@@ -2300,54 +2300,44 @@ if (IS_HEADER) {
 // CẬP NHẬT: PHÁO HOA CHỮ - PHIÊN BẢN SHELL + ÂM THANH
 // =======================================================
 
-// 1. Hàm lấy tọa độ điểm ảnh (Phiên bản HD Super-sampling)
+// 1. Hàm lấy tọa độ điểm ảnh (Đã tối ưu hiệu năng Mobile)
 function getTextPoints(text, fontSize, fontName = 'Arial') {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // [KỸ THUẬT MỚI] Hệ số độ phân giải (Resolution Scale)
-    // Vẽ to gấp 2 lần bình thường để lấy nét các đường cong
+    // Vẫn giữ Resolution = 2 để chữ nét, không bị răng cưa
     const resolution = 2; 
     
-    // Tính toán kích thước canvas (Nhân với resolution)
     const w = fontSize * text.length;
     const h = fontSize * 1.5;
     canvas.width = w * resolution; 
     canvas.height = h * resolution;
 
-    // Scale context lên để vẽ chữ to đẹp
     ctx.scale(resolution, resolution);
-
-    // Vẽ chữ
     ctx.font = `bold ${fontSize}px ${fontName}`;
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // Lưu ý: Tọa độ vẽ vẫn giữ nguyên vì ta đã dùng ctx.scale
     ctx.fillText(text, w / 2, h / 2);
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     const points = [];
     
-    // [QUAN TRỌNG] Điều chỉnh độ thưa (step)
-    // Mobile màn hình nhỏ cần nét dày hơn -> step nhỏ (3 hoặc 4)
-    // PC màn hình to cần thưa cho thoáng -> step lớn (8 hoặc 9)
-    // Vì ta đang vẽ ở độ phân giải x2 (resolution = 2), ta cũng cần nhân step lên tương ứng
-    const baseStep = IS_MOBILE ? 2 : 8; 
+    // [TỐI ƯU HÓA Ở ĐÂY]
+    // Mobile: Tăng step lên 5 (trước là 3) để giảm số lượng hạt
+    // PC: Giữ nguyên hoặc tăng nhẹ nếu máy yếu
+    const baseStep = IS_MOBILE ? 5 : 8; 
     const step = baseStep * resolution; 
 
     for (let y = 0; y < canvas.height; y += step) {
-        // Thêm một chút random cho x start để các hàng không bị thẳng tắp (tự nhiên hơn)
+        // Ziczac để hạt trông tự nhiên hơn dù mật độ thưa
         const xStart = (y % (step*2) === 0) ? 0 : (step/2);
         
         for (let x = xStart; x < canvas.width; x += step) {
             const index = (y * canvas.width + Math.floor(x)) * 4;
-            
-            // Kiểm tra độ trong suốt (Alpha channel)
             if (data[index + 3] > 128) {
                 points.push({
-                    // Chia lại cho resolution để trả về kích thước thật trên màn hình
                     x: (x - canvas.width / 2) / resolution, 
                     y: (y - canvas.height / 2) / resolution
                 });
@@ -2357,16 +2347,20 @@ function getTextPoints(text, fontSize, fontName = 'Arial') {
     return points;
 }
 
-// 2. Hàm tạo hạt pháo hoa (được gọi sau khi quả pháo bay lên và nổ)
+// Hàm tạo hạt pháo hoa (Đã giảm tải hiệu ứng Spark cho Mobile)
 function spawnTextParticles(x, y, text, fontSize, colorHex, fontName) {
-    const font = fontName || 'Impact, Arial';
-
+    const font = fontName || 'Impact, Arial'; 
     const points = getTextPoints(text, fontSize, font);
     const color = colorHex || COLOR.Gold;
 
-    points.forEach(p => {
-        const lifeTime = 3000 + Math.random() * 2000; // Sống từ 3-5 giây
+    // [TỐI ƯU HÓA] Giảm số lượng hiệu ứng trên Mobile
+    // Nếu là Mobile, tia lửa bắn chậm hơn (50ms/lần) so với PC (20ms/lần)
+    const mobileSparkFreq = 50; 
+    const desktopSparkFreq = 20;
+    const sparkFreq = IS_MOBILE ? mobileSparkFreq : desktopSparkFreq;
 
+    points.forEach(p => {
+        const lifeTime = 3000 + Math.random() * 2000;
         const star = Star.add(
             x + p.x,   
             y + p.y,   
@@ -2376,18 +2370,19 @@ function spawnTextParticles(x, y, text, fontSize, colorHex, fontName) {
             lifeTime, 
             0, 0        
         );
-
-        // --- CẤU HÌNH SPARKLE (Pháo bông que) ---
+        
         star.ignoreGravity = true; 
         star.speedX = 0;
         star.speedY = 0;
-        star.spinRadius = 0; // Giữ chữ đứng im, không xoay
+        star.spinRadius = 0; 
         
-        // Hiệu ứng "Crack crack" (Lửa xẹt)
-        star.sparkFreq = 80;    // Bắn tia lửa liên tục
-        star.sparkSpeed = IS_MOBILE ? 0.5 : 2.8;  // Tia lửa bắn ra độ xa vừa phải
-        star.sparkLife = 600;   
-        star.sparkLifeVariation = 3.0;
+        // Cấu hình tia lửa đã tối ưu
+        star.sparkFreq = sparkFreq;    
+        star.sparkSpeed = 1.0;  
+        
+        // Giảm thời gian sống của tia lửa con trên mobile để dọn rác nhanh hơn
+        star.sparkLife = IS_MOBILE ? 350 : 500;   
+        star.sparkLifeVariation = 2.0;
         star.sparkColor = COLOR.Gold; 
     });
 }
@@ -2418,13 +2413,34 @@ function launchTextShell() {
         soundManager.playSound('crackle'); 
         setTimeout(() => soundManager.playSound('crackle'), 300);
         setTimeout(() => soundManager.playSound('crackle'), 300);
-        setTimeout(() => soundManager.playSound('burstSmall'), 200);
-        setTimeout(() => soundManager.playSound('crackle'), 200);
-        setTimeout(() => soundManager.playSound('burstSmall'), 200);
-        setTimeout(() => soundManager.playSound('crackle'), 300);
-        setTimeout(() => soundManager.playSound('crackle'), 300);
-        setTimeout(() => soundManager.playSound('burstSmall'), 200);
-        setTimeout(() => soundManager.playSound('crackle'), 300);
+        setTimeout(() => soundManager.playSound('burstSmall'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('burstSmall'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('burstSmall'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('burstSmall'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('burst'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('burstSmall'), 500);
+        setTimeout(() => soundManager.playSound('burstSmall'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('burst'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        setTimeout(() => soundManager.playSound('crackle'), 500);
+        
 
 
         // --- 2. VỊ TRÍ NỔ ---
