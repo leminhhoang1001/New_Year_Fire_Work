@@ -2356,7 +2356,7 @@ function spawnTextParticles(x, y, text, fontSize, colorHex, fontName) {
     // [TỐI ƯU HÓA] Giảm số lượng hiệu ứng trên Mobile
     // Nếu là Mobile, tia lửa bắn chậm hơn (50ms/lần) so với PC (20ms/lần)
     const mobileSparkFreq = 50; 
-    const desktopSparkFreq = 20;
+    const desktopSparkFreq = 30;
     const sparkFreq = IS_MOBILE ? mobileSparkFreq : desktopSparkFreq;
 
     points.forEach(p => {
@@ -2381,7 +2381,7 @@ function spawnTextParticles(x, y, text, fontSize, colorHex, fontName) {
         star.sparkSpeed = 1.0;  
         
         // Giảm thời gian sống của tia lửa con trên mobile để dọn rác nhanh hơn
-        star.sparkLife = IS_MOBILE ? 350 : 500;   
+        star.sparkLife = IS_MOBILE ? 300 : 400;   
         star.sparkLifeVariation = 2.0;
         star.sparkColor = COLOR.Gold; 
     });
@@ -2456,7 +2456,7 @@ function launchTextShell() {
         // Dòng 2: "2026" (Font TO)
         // Dịch xuống dưới một chút (Y + 60) -> Khoảng cách gần
         const nextYear = new Date().getFullYear();
-        spawnTextParticles(X, Y + 200, nextYear.toString(), IS_MOBILE ? 100 : 200, COLOR.White, 'Bangers');
+        spawnTextParticles(X, Y + 200, "2 0 2 6", IS_MOBILE ? 100 : 200, COLOR.White, 'Bangers');
         
         // (Tùy chọn) Thêm một chớp sáng (Flash) để cú nổ trông mạnh hơn
         BurstFlash.add(X, Y, 200);
