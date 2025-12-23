@@ -2451,12 +2451,12 @@ function launchTextShell() {
         // --- 3. HIỆN CHỮ ---
         // Dòng 1: "Happy New Year" (Font vừa)
         // Dịch lên trên một chút (Y - 60)
-        spawnTextParticles(X, Y, "Happy New Year", IS_MOBILE ? 60 : 150, COLOR.Gold, 'Pacifico');
+        spawnTextParticles(X, Y, "Happy New Year", IS_MOBILE ? 50 : 150, COLOR.Gold, 'Pacifico');
 
         // Dòng 2: "2026" (Font TO)
         // Dịch xuống dưới một chút (Y + 60) -> Khoảng cách gần
         const nextYear = new Date().getFullYear();
-        spawnTextParticles(X, Y + 200, "2 0 2 6", IS_MOBILE ? 100 : 200, COLOR.White, 'Bangers');
+        spawnTextParticles(X,IS_MOBILE ? Y +100 : Y + 200, "2 0 2 6", IS_MOBILE ? 90 : 200, COLOR.White, 'Bangers');
         
         // (Tùy chọn) Thêm một chớp sáng (Flash) để cú nổ trông mạnh hơn
         BurstFlash.add(X, Y, 200);
